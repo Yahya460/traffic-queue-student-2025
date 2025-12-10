@@ -211,11 +211,12 @@
     <button class="btn-secondary" onclick="loadStats()">تحديث الإحصائيات</button>
   </div>
 
-  <!-- التحكم في تصفير الدور -->
+  <!-- التحكم في تصفير الدور + الإحصائيات -->
   <div class="card" id="resetCard" style="display:none;">
     <h3>إدارة الدور</h3>
-    <p>يمكنك تصفير الأرقام وإعادة النظام للبداية (0).</p>
+    <p>يمكنك تصفير الأرقام وإعادة النظام للبداية (0) أو تصفير الإحصائيات فقط.</p>
     <button class="btn-danger" onclick="resetQueue()">تصفير الدور بالكامل</button>
+    <button class="btn-secondary" onclick="resetStats()">تصفير الإحصائيات فقط</button>
   </div>
 
   <div class="footer">
@@ -373,7 +374,6 @@
       .catch(err => console.error(err));
     }
 
-    // === تعديل مهم هنا لإخفاء القائمة الطويلة ===
     function loadStats() {
       fetch('/api/stats?adminSecret=' + encodeURIComponent(adminSecretValue))
         .then(res => {
@@ -383,7 +383,6 @@
         .then(stats => {
           document.getElementById('totalCalls').textContent = stats.totalCalls || 0;
 
-          // حسب الموظف (كما هو)
           const perStaffList = document.getElementById('perStaffList');
           perStaffList.innerHTML = '';
           Object.keys(stats.perStaff || {}).forEach(name => {
@@ -392,27 +391,17 @@
             perStaffList.appendChild(li);
           });
 
-          // ✅ تجميع حسب اليوم فقط (بدل عرض كل الوقت مع الساعات)
-          const perDayRaw = stats.perDay || {};
-          const perDayAgg = {};
-
-          Object.keys(perDayRaw).forEach(key => {
-            // نأخذ فقط YYYY-MM-DD من بداية النص
-            const day = key.slice(0, 10);
-            const value = Number(perDayRaw[key]) || 0;
-            perDayAgg[day] = (perDayAgg[day] || 0) + value;
-          });
-
           const perDayList = document.getElementById('perDayList');
           perDayList.innerHTML = '';
-          Object.keys(perDayAgg).forEach(day => {
+          Object.keys(stats.perDay || {}).forEach(day => {
             const li = document.createElement('li');
-            li.textContent = day + ' : ' + perDayAgg[day] + ' رقم/أرقام';
+            li.textContent = day + ' : ' + stats.perDay[day] + ' رقم/أرقام';
             perDayList.appendChild(li);
           });
         })
         .catch(err => console.error(err));
 
+      // نجلب بيانات آخر ملاحظة عامة مع كل تحديث إحصائيات
       loadNoteInfo();
     }
 
@@ -427,6 +416,23 @@
       .then(res => res.json())
       .then(data => {
         alert(data.message || 'تم التصفير');
+      })
+      .catch(err => console.error(err));
+    }
+
+    // زر جديد: تصفير الإحصائيات فقط
+    function resetStats() {
+      if (!confirm('هل أنت متأكد من تصفير جميع الإحصائيات؟')) return;
+
+      fetch('/api/reset-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSecret: adminSecretValue })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || 'تم تصفير الإحصائيات');
+        loadStats();
       })
       .catch(err => console.error(err));
     }
@@ -497,6 +503,9 @@
         })
         .catch(err => console.error(err));
     }
+
+    // تحديث تلقائي لاسم الموظف + محتوى آخر ملاحظة عامة كل 5 ثواني
+    setInterval(loadNoteInfo, 5000);
   </script>
 </body>
 </html>
