@@ -3,75 +3,94 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-// مهم لـ Render:
+// البورت من Render أو 3000 محلياً
 const PORT = process.env.PORT || 3000;
 
-// ===== إعدادات عامة =====
+// مسارات الملفات
+const statsFile = path.join(__dirname, 'stats.json');
+const usersFile = path.join(__dirname, 'users.json');
+
+// كلمة سر المدير (Admin Secret)
+const ADMIN_SECRET = '2626';
+
+// إعداد Express
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ===== حالة الدور (Queue State) في الذاكرة =====
-let currentNumber = 0;     // رقم التلميذ الحالي
-let currentGender = '';    // تصنيف التلميذ الحالي: men / women
-let history = [];          // آخر 15 رقم تلميذ (سجل عام سابق)
-let historyMen = [];       // أرقام التلاميذ (رجال) السابقين
-let historyWomen = [];     // أرقام التلاميذ (نساء) السابقين
-let noteText = '';         // الملاحظة العامة التي تظهر على شاشة العرض
-let lastNoteStaff = '';    // اسم الموظف الذي كتب آخر ملاحظة عامة
-
-// ===== ملاحظات خاصة من المدير لكل موظف (لا تظهر على شاشة العرض) =====
-let staffNotes = {};       // { staffName: note }
-
-// ===== إعداد مدير النظام =====
-const ADMIN_SECRET = 'asm-admin-2025'; // كلمة سر لوحة المدير
-
-// ===== دوال مساعدة للمستخدمين =====
-function loadUsers() {
+// ===== دوال مساعدة عامة =====
+function readJSON(file) {
   try {
-    const data = fs.readFileSync(path.join(__dirname, 'users.json'), 'utf8');
-    return JSON.parse(data);
+    const data = fs.readFileSync(file, 'utf8');
+    return JSON.parse(data || '{}');
   } catch (err) {
-    console.error('Error loading users.json', err);
-    return [];
+    console.error('Error reading JSON file:', file, err.message);
+    return {};
   }
 }
 
-function saveUsers(users) {
-  fs.writeFileSync(
-    path.join(__dirname, 'users.json'),
-    JSON.stringify(users, null, 2),
-    'utf8'
-  );
+function writeJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 }
 
-// ===== دوال مساعدة للإحصائيات =====
+// ===== دوال الإحصائيات =====
+function baseStats() {
+  return {
+    totalCalls: 0,
+    perStaff: {},
+    perDay: {}
+  };
+}
+
 function loadStats() {
-  try {
-    const data = fs.readFileSync(path.join(__dirname, 'stats.json'), 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    console.error('Error loading stats.json', err);
-    return { totalCalls: 0, perStaff: {}, perDay: {} };
-  }
+  const raw = readJSON(statsFile);
+  return {
+    totalCalls: raw.totalCalls || 0,
+    perStaff: raw.perStaff || {},
+    perDay: raw.perDay || {}
+  };
 }
 
 function saveStats(stats) {
-  fs.writeFileSync(
-    path.join(__dirname, 'stats.json'),
-    JSON.stringify(stats, null, 2),
-    'utf8'
-  );
+  writeJSON(statsFile, stats);
 }
 
-// ===== دوال مساعدة لصلاحيات المدير =====
+// ===== دوال المستخدمين =====
+function loadUsers() {
+  const data = readJSON(usersFile);
+  if (Array.isArray(data)) return data;
+  return [];
+}
+
+function saveUsers(users) {
+  writeJSON(usersFile, users);
+}
+
+// ===== دوال صلاحيات المدير =====
 function isAdmin(req) {
-  const secret = req.query.adminSecret || req.body.adminSecret;
+  const secret = (req.query && req.query.adminSecret) ||
+                 (req.body && req.body.adminSecret);
   return secret === ADMIN_SECRET;
 }
 
-// ===== واجهات خاصة بالدور (Queue APIs) =====
+// ===== حالة الدور في الذاكرة =====
+let currentNumber = 0;     // رقم التلميذ الحالي
+let currentGender = '';    // men / women
+let history = [];          // آخر أرقام بشكل عام (حتى 15)
+let historyMen = [];       // آخر أرقام للرجال
+let historyWomen = [];     // آخر أرقام للنساء
+let noteText = '';         // آخر ملاحظة عامة تظهر على شاشة العرض
+let lastNoteStaff = '';    // اسم الموظف صاحب آخر ملاحظة عامة
 
-// إرجاع حالة الدور الحالية لشاشة العرض والموظف
+// ملاحظات خاصة من المدير لكل موظف
+let staffNotes = {};       // { staffName: note }
+
+// ===== API عرض الصفحة الرئيسية (اختياري) =====
+app.get('/', (req, res) => {
+  // نوجه لأي صفحة تحبها، مثلاً صفحة تسجيل الدخول:
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// ===== API حالة الدور (لشاشة العرض ولوحة الموظف) =====
 app.get('/api/state', (req, res) => {
   res.json({
     currentNumber,
@@ -84,7 +103,7 @@ app.get('/api/state', (req, res) => {
   });
 });
 
-// نداء تلميذ - الموظف يختار رقم التلميذ والجنس
+// ===== API نداء تلميذ جديد =====
 app.post('/api/next', (req, res) => {
   const { staffName, studentNumber, gender } = req.body;
 
@@ -97,12 +116,10 @@ app.post('/api/next', (req, res) => {
     return res.status(400).json({ message: 'رقم التلميذ غير صالح' });
   }
 
-  // إدراج التلميذ الحالي (السابق) في السجلات المناسبة قبل التحديث
+  // لو في رقم حالي، نضيفه للتاريخ قبل التحديث
   if (currentNumber > 0) {
     history.unshift(currentNumber);
-    if (history.length > 15) {
-      history.pop();
-    }
+    if (history.length > 15) history.pop();
 
     if (currentGender === 'men') {
       historyMen.unshift(currentNumber);
@@ -113,7 +130,7 @@ app.post('/api/next', (req, res) => {
     }
   }
 
-  // تحديث التلميذ الحالي بالجديد
+  // تحديث الرقم الحالي
   currentNumber = parsedNumber;
   currentGender = gender || '';
 
@@ -139,7 +156,7 @@ app.post('/api/next', (req, res) => {
   });
 });
 
-// إعادة نداء نفس التلميذ بدون تغيير الرقم
+// ===== API إعادة نداء التلميذ الحالي (بدون تغيير الرقم) =====
 app.post('/api/repeat', (req, res) => {
   res.json({
     currentNumber,
@@ -150,20 +167,22 @@ app.post('/api/repeat', (req, res) => {
   });
 });
 
-// تصفير الدور (مدير فقط)
+// ===== API تصفير الدور (الرقم الحالي والتواريخ فقط) =====
 app.post('/api/reset', (req, res) => {
   if (!isAdmin(req)) {
     return res.status(403).json({ message: 'غير مصرح' });
   }
+
   currentNumber = 0;
   currentGender = '';
   history = [];
   historyMen = [];
   historyWomen = [];
-  res.json({ message: 'تم تصفير الدور' });
+
+  res.json({ message: 'تم تصفير الدور بالكامل.' });
 });
 
-// تحديث الملاحظة العامة التي تظهر على شاشة العرض
+// ===== API الملاحظة العامة التي تظهر على شاشة العرض =====
 app.post('/api/note', (req, res) => {
   const { note, staffName } = req.body;
   noteText = note || '';
@@ -171,9 +190,7 @@ app.post('/api/note', (req, res) => {
   res.json({ noteText, lastNoteStaff });
 });
 
-// ===== واجهات الدخول وإدارة المستخدمين =====
-
-// تسجيل الدخول (يستخدم لشاشة دخول الموظف)
+// ===== تسجيل الدخول للموظفين (لوحة الموظف) =====
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   const users = loadUsers();
@@ -187,12 +204,15 @@ app.post('/api/login', (req, res) => {
   }
 
   res.json({
+    success: true,
     username: user.username,
     role: user.role
   });
 });
 
-// عرض جميع المستخدمين (مدير فقط)
+// ===== إدارة المستخدمين (المدير فقط) =====
+
+// عرض جميع المستخدمين
 app.get('/api/users', (req, res) => {
   if (!isAdmin(req)) {
     return res.status(403).json({ message: 'غير مصرح' });
@@ -201,7 +221,7 @@ app.get('/api/users', (req, res) => {
   res.json(users);
 });
 
-// إضافة مستخدم جديد
+// إضافة مستخدم
 app.post('/api/users', (req, res) => {
   if (!isAdmin(req)) {
     return res.status(403).json({ message: 'غير مصرح' });
@@ -219,6 +239,7 @@ app.post('/api/users', (req, res) => {
 
   users.push({ username, password, role });
   saveUsers(users);
+
   res.json({ message: 'تم إضافة المستخدم بنجاح' });
 });
 
@@ -231,6 +252,10 @@ app.put('/api/users/:username/password', (req, res) => {
   const username = req.params.username;
   const { newPassword } = req.body;
 
+  if (!newPassword) {
+    return res.status(400).json({ message: 'أدخل كلمة مرور جديدة' });
+  }
+
   const users = loadUsers();
   const user = users.find((u) => u.username === username);
   if (!user) {
@@ -239,6 +264,7 @@ app.put('/api/users/:username/password', (req, res) => {
 
   user.password = newPassword;
   saveUsers(users);
+
   res.json({ message: 'تم تحديث كلمة المرور' });
 });
 
@@ -250,10 +276,11 @@ app.delete('/api/users/:username', (req, res) => {
 
   const username = req.params.username;
   let users = loadUsers();
-  const lengthBefore = users.length;
+  const before = users.length;
+
   users = users.filter((u) => u.username !== username);
 
-  if (users.length === lengthBefore) {
+  if (users.length === before) {
     return res.status(404).json({ message: 'المستخدم غير موجود' });
   }
 
@@ -261,7 +288,7 @@ app.delete('/api/users/:username', (req, res) => {
   res.json({ message: 'تم حذف المستخدم' });
 });
 
-// ===== واجهة الإحصائيات للمدير =====
+// ===== الإحصائيات (المدير فقط) =====
 app.get('/api/stats', (req, res) => {
   if (!isAdmin(req)) {
     return res.status(403).json({ message: 'غير مصرح' });
@@ -270,17 +297,31 @@ app.get('/api/stats', (req, res) => {
   res.json(stats);
 });
 
-// ===== ملاحظات من المدير لموظف معيّن (لا تظهر على شاشة العرض) =====
+// تصفير الإحصائيات فقط (بدون لمس الدور)
+app.post('/api/reset-stats', (req, res) => {
+  if (!isAdmin(req)) {
+    return res.status(403).json({ success: false, message: 'غير مصرح' });
+  }
 
-// حفظ/تحديث ملاحظة لموظف معيّن - مدير فقط
+  const stats = baseStats();
+  saveStats(stats);
+
+  res.json({ success: true, message: 'تم تصفير الإحصائيات بنجاح.' });
+});
+
+// ===== ملاحظات المدير الخاصة لكل موظف =====
+
+// حفظ / تحديث ملاحظة لموظف معين
 app.post('/api/staff-note', (req, res) => {
   if (!isAdmin(req)) {
     return res.status(403).json({ message: 'غير مصرح' });
   }
+
   const { staffName, note } = req.body;
   if (!staffName) {
     return res.status(400).json({ message: 'اسم الموظف مطلوب' });
   }
+
   staffNotes[staffName] = note || '';
   res.json({
     message: 'تم حفظ الملاحظة',
@@ -289,12 +330,13 @@ app.post('/api/staff-note', (req, res) => {
   });
 });
 
-// جلب ملاحظة الموظف (يستخدمها شاشة الموظف)
+// جلب ملاحظة موظف معين (تظهر في لوحة الموظف)
 app.get('/api/staff-note', (req, res) => {
   const staffName = req.query.staffName;
   if (!staffName) {
     return res.status(400).json({ message: 'اسم الموظف مطلوب' });
   }
+
   res.json({
     staffName,
     note: staffNotes[staffName] || ''
