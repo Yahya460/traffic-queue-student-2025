@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>دخول الموظف - نظام الدور</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      color: #f9fafb;
+    }
+    .card {
+      background: #020617;
+      border-radius: 18px;
+      padding: 20px 22px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      border: 1px solid #1f2937;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      text-align: center;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 10px;
+      border: 1px solid #4b5563;
+      font-size: 14px;
+      font-family: inherit;
+      background: #020617;
+      color: #f9fafb;
+    }
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 9px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      background: #2563eb;
+      color: #ffffff;
+    }
+    .error {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #fca5a5;
+      min-height: 18px;
+    }
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #9ca3af;
+      text-align: center;
+    }
+    .footer {
+      margin-top: 12px;
+      font-size: 12px;
+      text-align: center;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>دخول الموظف</h1>
+    <div class="subtitle">أدخل اسم المستخدم وكلمة المرور لفتح لوحة الموظف</div>
+
+    <label>اسم المستخدم</label>
+    <input id="username" autocomplete="off" />
+
+    <label>كلمة المرور</label>
+    <input id="password" type="password" />
+
+    <button onclick="login()">دخول</button>
+
+    <div class="error" id="errorBox"></div>
+
+    <div class="hint">
+      بيانات الدخول تُدار من خلال لوحة المدير (إضافة موظفين وتغيير كلمات المرور).
+    </div>
+
+    <div class="footer">
+      جميع الحقوق محفوظة للرقيب أول يحيى آل عبدالسلام
+    </div>
+  </div>
+
+  <script>
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const errorBox = document.getElementById('errorBox');
+
+      if (!username || !password) {
+        errorBox.textContent = 'الرجاء إدخال اسم المستخدم وكلمة المرور.';
+        return;
+      }
+
+      fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error('login-failed');
+          return res.json();
+        })
+        .then((data) => {
+          if (data.role !== 'staff') {
+            errorBox.textContent = 'الحساب ليس من صلاحية الموظف.';
+            return;
+          }
+          localStorage.setItem('staffName', data.username);
+          window.location.href = 'staff.html';
+        })
+        .catch((err) => {
+          console.error(err);
+          errorBox.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+        });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        login();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>لوحة المدير - نظام الدور</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f3f4f6;
+      padding: 18px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 18px;
+      font-size: 14px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+      margin-bottom: 16px;
+    }
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 17px;
+    }
+    label {
+      display: block;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    textarea {
+      min-height: 70px;
+      resize: vertical;
+    }
+    button {
+      border: none;
+      cursor: pointer;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .btn-primary { background: #2563eb; color: #ffffff; }
+    .btn-danger { background: #ef4444; color: #ffffff; }
+    .btn-secondary { background: #e5e7eb; color: #111827; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 6px 4px;
+      text-align: center;
+    }
+    .footer {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .flex-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .flex-row > * {
+      flex: 1 1 140px;
+    }
+    ul {
+      padding-right: 18px;
+      margin-top: 6px;
+      font-size: 14px;
+    }
+    .manager-note-preview {
+      margin-top: 6px;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px dashed #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 13px;
+      min-height: 40px;
+      white-space: pre-line;
+    }
+    .last-note-box {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px dashed #fed7aa;
+      background: #fff7ed;
+      color: #7c2d12;
+      font-size: 13px;
+      min-height: 40px;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <h1>لوحة المدير - نظام الدور</h1>
+  <div class="subtitle">
+    إدارة المستخدمين · تغيير كلمات المرور · إرسال ملاحظات للموظفين · عرض إحصائيات نداء الأرقام · التحكم في تصفير الدور · معرفة الموظف ومحتوى آخر ملاحظة عامة
+  </div>
+
+  <!-- دخول المدير -->
+  <div class="card">
+    <h3>دخول المدير</h3>
+    <label>كلمة سر المدير (Admin Secret)</label>
+    <input type="password" id="adminSecret" placeholder="مثال: asm-admin-2025" />
+    <button class="btn-primary" onclick="unlockAdmin()">دخول</button>
+    <p id="adminStatus" style="color:#ef4444; font-size: 13px;"></p>
+  </div>
+
+  <!-- إدارة المستخدمين -->
+  <div class="card" id="usersCard" style="display:none;">
+    <h3>إدارة المستخدمين</h3>
+    <div class="flex-row">
+      <div>
+        <label>اسم المستخدم الجديد</label>
+        <input id="newUsername" />
+      </div>
+      <div>
+        <label>كلمة المرور</label>
+        <input id="newPassword" />
+      </div>
+      <div>
+        <label>الدور</label>
+        <select id="newRole">
+          <option value="staff">موظف</option>
+          <option value="admin">مدير</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="addUser()">إضافة مستخدم</button>
+
+    <h4>قائمة المستخدمين</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>اسم المستخدم</th>
+          <th>الدور</th>
+          <th>تغيير كلمة المرور</th>
+          <th>حذف</th>
+        </tr>
+      </thead>
+      <tbody id="usersTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- إرسال ملاحظة لموظف معيّن -->
+  <div class="card" id="notesCard" style="display:none;">
+    <h3>ملاحظات للموظفين (لا تظهر على شاشة العرض)</h3>
+    <label>اختر الموظف</label>
+    <select id="noteStaffSelect">
+      <option value="">اختر الموظف...</option>
+    </select>
+
+    <label>الملاحظة</label>
+    <textarea id="noteForStaff" placeholder="اكتب ملاحظة للموظف المختار (ستظهر في لوحة الموظف)"></textarea>
+
+    <button class="btn-primary" onclick="sendStaffNote()">إرسال/تحديث الملاحظة</button>
+    <button class="btn-secondary" onclick="loadCurrentStaffNote()">عرض الملاحظة الحالية</button>
+
+    <div class="manager-note-preview" id="staffNotePreview">
+      اختر موظفًا لعرض أو إرسال الملاحظة.
+    </div>
+  </div>
+
+  <!-- الإحصائيات + آخر ملاحظة عامة -->
+  <div class="card" id="statsCard" style="display:none;">
+    <h3>الإحصائيات</h3>
+    <p><strong>إجمالي الأرقام التي تم نداؤها:</strong> <span id="totalCalls">0</span></p>
+
+    <h4>حسب الموظف</h4>
+    <ul id="perStaffList"></ul>
+
+    <h4>حسب اليوم</h4>
+    <ul id="perDayList"></ul>
+
+    <p style="margin-top:10px; font-size:14px;">
+      <strong>الموظف صاحب آخر ملاحظة عامة على شاشة العرض:</strong>
+      <span id="lastNoteStaff">-</span>
+    </p>
+
+    <h4>محتوى آخر ملاحظة عامة على شاشة العرض</h4>
+    <div class="last-note-box" id="lastNoteText">
+      لا توجد ملاحظة عامة حاليًا.
+    </div>
+
+    <button class="btn-secondary" onclick="loadStats()">تحديث الإحصائيات</button>
+  </div>
+
+  <!-- التحكم في تصفير الدور -->
+  <div class="card" id="resetCard" style="display:none;">
+    <h3>إدارة الدور</h3>
+    <p>يمكنك تصفير الأرقام وإعادة النظام للبداية (0).</p>
+    <button class="btn-danger" onclick="resetQueue()">تصفير الدور بالكامل</button>
+  </div>
+
+  <div class="footer">
+    جميع الحقوق محفوظة للرقيب أول يحيى آل عبدالسلام
+  </div>
+
+  <script>
+    let adminSecretValue = '';
+    let usersCache = [];
+
+    function unlockAdmin() {
+      adminSecretValue = document.getElementById('adminSecret').value.trim();
+      if (!adminSecretValue) {
+        document.getElementById('adminStatus').textContent = 'أدخل كلمة سر المدير أولاً.';
+        return;
+      }
+      loadUsers(true);
+    }
+
+    function loadUsers(fromUnlock = false) {
+      fetch('/api/users?adminSecret=' + encodeURIComponent(adminSecretValue))
+        .then(res => {
+          if (!res.ok) throw new Error('غير مصرح');
+          return res.json();
+        })
+        .then(users => {
+          usersCache = users;
+          document.getElementById('usersCard').style.display = 'block';
+          document.getElementById('statsCard').style.display = 'block';
+          document.getElementById('resetCard').style.display = 'block';
+          document.getElementById('notesCard').style.display = 'block';
+          document.getElementById('adminStatus').textContent = fromUnlock ? 'تم الدخول كمدير.' : '';
+          renderUsers(users);
+          renderStaffSelect(users);
+          loadStats();
+          loadNoteInfo();
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById('adminStatus').textContent = 'كلمة السر غير صحيحة أو غير مصرح.';
+        });
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+      users.forEach(user => {
+        const tr = document.createElement('tr');
+
+        const tdUser = document.createElement('td');
+        tdUser.textContent = user.username;
+
+        const tdRole = document.createElement('td');
+        tdRole.textContent = user.role === 'admin' ? 'مدير' : 'موظف';
+
+        const tdChangePass = document.createElement('td');
+        const inputNewPass = document.createElement('input');
+        inputNewPass.type = 'text';
+        inputNewPass.placeholder = 'كلمة مرور جديدة';
+        inputNewPass.style.width = '120px';
+        const btnChange = document.createElement('button');
+        btnChange.textContent = 'تحديث';
+        btnChange.className = 'btn-primary';
+        btnChange.style.marginRight = '4px';
+        btnChange.onclick = () => changePassword(user.username, inputNewPass.value);
+        tdChangePass.appendChild(inputNewPass);
+        tdChangePass.appendChild(btnChange);
+
+        const tdDelete = document.createElement('td');
+        const btnDelete = document.createElement('button');
+        btnDelete.textContent = 'حذف';
+        btnDelete.className = 'btn-danger';
+        btnDelete.onclick = () => deleteUser(user.username);
+        tdDelete.appendChild(btnDelete);
+
+        tr.appendChild(tdUser);
+        tr.appendChild(tdRole);
+        tr.appendChild(tdChangePass);
+        tr.appendChild(tdDelete);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderStaffSelect(users) {
+      const select = document.getElementById('noteStaffSelect');
+      const currentValue = select.value;
+      select.innerHTML = '<option value=\"\">اختر الموظف...</option>';
+      users
+        .filter(u => u.role === 'staff')
+        .forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.username;
+          opt.textContent = u.username;
+          select.appendChild(opt);
+        });
+      if (currentValue) {
+        select.value = currentValue;
+      }
+    }
+
+    function addUser() {
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value.trim();
+      const role = document.getElementById('newRole').value;
+
+      if (!username || !password) {
+        alert('أدخل اسم المستخدم وكلمة المرور.');
+        return;
+      }
+
+      fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSecret: adminSecretValue, username, password, role })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || 'تم الحفظ');
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newPassword').value = '';
+        loadUsers();
+      })
+      .catch(err => console.error(err));
+    }
+
+    function changePassword(username, newPassword) {
+      if (!newPassword) {
+        alert('أدخل كلمة مرور جديدة.');
+        return;
+      }
+      fetch('/api/users/' + encodeURIComponent(username) + '/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSecret: adminSecretValue, newPassword })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || 'تم التحديث');
+      })
+      .catch(err => console.error(err));
+    }
+
+    function deleteUser(username) {
+      if (!confirm('هل أنت متأكد من حذف المستخدم \"' + username + '\"؟')) return;
+
+      fetch('/api/users/' + encodeURIComponent(username) + '?adminSecret=' + encodeURIComponent(adminSecretValue), {
+        method: 'DELETE'
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || 'تم الحذف');
+        loadUsers();
+      })
+      .catch(err => console.error(err));
+    }
+
+    function loadStats() {
+      fetch('/api/stats?adminSecret=' + encodeURIComponent(adminSecretValue))
+        .then(res => {
+          if (!res.ok) throw new Error('غير مصرح');
+          return res.json();
+        })
+        .then(stats => {
+          document.getElementById('totalCalls').textContent = stats.totalCalls || 0;
+
+          const perStaffList = document.getElementById('perStaffList');
+          perStaffList.innerHTML = '';
+          Object.keys(stats.perStaff || {}).forEach(name => {
+            const li = document.createElement('li');
+            li.textContent = name + ' : ' + stats.perStaff[name] + ' رقم/أرقام';
+            perStaffList.appendChild(li);
+          });
+
+          const perDayList = document.getElementById('perDayList');
+          perDayList.innerHTML = '';
+          Object.keys(stats.perDay || {}).forEach(day => {
+            const li = document.createElement('li');
+            li.textContent = day + ' : ' + stats.perDay[day] + ' رقم/أرقام';
+            perDayList.appendChild(li);
+          });
+        })
+        .catch(err => console.error(err));
+
+      loadNoteInfo();
+    }
+
+    function resetQueue() {
+      if (!confirm('هل أنت متأكد من تصفير الدور بالكامل؟')) return;
+
+      fetch('/api/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSecret: adminSecretValue })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || 'تم التصفير');
+      })
+      .catch(err => console.error(err));
+    }
+
+    // ===== ملاحظات للموظفين =====
+    function getSelectedStaffForNote() {
+      const select = document.getElementById('noteStaffSelect');
+      return select.value || '';
+    }
+
+    function sendStaffNote() {
+      const staffName = getSelectedStaffForNote();
+      const note = document.getElementById('noteForStaff').value;
+      const preview = document.getElementById('staffNotePreview');
+
+      if (!staffName) {
+        alert('اختر الموظف أولاً.');
+        return;
+      }
+
+      fetch('/api/staff-note', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminSecret: adminSecretValue, staffName, note })
+      })
+      .then(res => res.json())
+      .then(data => {
+        preview.textContent = data.note ? data.note : 'لا توجد ملاحظة حالية لهذا الموظف.';
+        alert('تم حفظ الملاحظة للموظف: ' + staffName);
+      })
+      .catch(err => console.error(err));
+    }
+
+    function loadCurrentStaffNote() {
+      const staffName = getSelectedStaffForNote();
+      const preview = document.getElementById('staffNotePreview');
+
+      if (!staffName) {
+        alert('اختر الموظف أولاً.');
+        return;
+      }
+
+      fetch('/api/staff-note?staffName=' + encodeURIComponent(staffName))
+        .then(res => res.json())
+        .then(data => {
+          const note = (data.note || '').trim();
+          if (!note) {
+            preview.textContent = 'لا توجد ملاحظة حالية لهذا الموظف.';
+          } else {
+            preview.textContent = note;
+          }
+        })
+        .catch(err => console.error(err));
+    }
+
+    // ===== معرفة الموظف ومحتوى آخر ملاحظة عامة =====
+    function loadNoteInfo() {
+      fetch('/api/state')
+        .then(res => res.json())
+        .then(state => {
+          const staffSpan = document.getElementById('lastNoteStaff');
+          const textBox = document.getElementById('lastNoteText');
+          const name = (state.lastNoteStaff || '').trim();
+          const note = (state.noteText || '').trim();
+
+          staffSpan.textContent = name || '-';
+          textBox.textContent = note || 'لا توجد ملاحظة عامة حاليًا.';
+        })
+        .catch(err => console.error(err));
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <title>شاشة العرض - نظام الدور</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Tahoma", Arial, sans-serif;
+            direction: rtl;
+            background-color: #e6f4ff;
+        }
+
+        .page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background-color: #ffd54f;
+            color: #000;
+            text-align: center;
+            padding: 10px 5px;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .top-bar-sub {
+            font-size: 0.9rem;
+            margin-top: 3px;
+        }
+
+        .main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1.3fr 1fr;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .column {
+            background-color: #b3e5fc;
+            border-radius: 16px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .column-header {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .tickets-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .ticket-box {
+            min-width: 60px;
+            padding: 8px;
+            border-radius: 12px;
+            border: 2px solid #0288d1;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            background-color: #e1f5fe;
+        }
+
+        .middle-column {
+            background-color: #81d4fa;
+            border-radius: 16px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .middle-top { text-align: center; }
+
+        .logo {
+            max-height: 110px;
+            margin: 0 auto 15px;
+            display: block;
+        }
+
+        .current-title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .current-number {
+            font-size: 4.2rem;
+            font-weight: bold;
+            padding: 15px 0;
+            margin: 0 auto;
+            min-width: 220px;
+            border-radius: 22px;
+            background-color: #e1f5fe;
+            border: 3px solid #01579b;
+        }
+
+        .current-gender {
+            margin-top: 8px;
+            font-size: 1.2rem;
+        }
+
+        .marquee-wrapper {
+            margin-top: 15px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 6px;
+            border: 2px solid #0277bd;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .marquee-text {
+            white-space: nowrap;
+            position: relative;
+            display: inline-block;
+            animation: marquee 15s linear infinite;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 6px;
+            font-size: 0.95rem;
+            background-color: #e0f7fa;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <!-- الشريط العلوي -->
+    <div class="top-bar">
+        نظام الدور - معهد السلامة المرورية بصحار
+        <div class="top-bar-sub">
+            يرجى الالتزام بالهدوء وانتظار دورك، مع تمنياتنا لكم بالتوفيق والنجاح
+        </div>
+    </div>
+
+    <div class="main">
+
+        <!-- النساء -->
+        <div class="column">
+            <div class="column-header">النساء - تم النداء</div>
+            <div class="tickets-container" id="female-tickets"></div>
+        </div>
+
+        <!-- الوسط -->
+        <div class="middle-column">
+            <div class="middle-top">
+                <img src="logo.png" class="logo" />
+                <div class="current-title">رقم التلميذ الحالي</div>
+                <div class="current-number" id="currentNumber">--</div>
+                <div class="current-gender" id="currentGender">---</div>
+            </div>
+
+            <div class="marquee-wrapper">
+                <div class="marquee-text" id="noticeText">
+                    يرجى الالتزام بالهدوء وانتظار دورك، مع تمنياتنا لكم بالتوفيق والنجاح.
+                </div>
+            </div>
+        </div>
+
+        <!-- الرجال -->
+        <div class="column">
+            <div class="column-header">الرجال - تم النداء</div>
+            <div class="tickets-container" id="male-tickets"></div>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        جميع الحقوق محفوظة للرقيب أول يحيى آل عبدالسلام
+    </div>
+
+</div>
+
+<!-- نغمة النداء (رجال ونساء نفس النغمة) -->
+<audio id="callSound" src="men.mp3" preload="auto"></audio>
+
+<script>
+    const maleContainer      = document.getElementById("male-tickets");
+    const femaleContainer    = document.getElementById("female-tickets");
+    const currentNumberEl    = document.getElementById("currentNumber");
+    const currentGenderEl    = document.getElementById("currentGender");
+    const noticeTextElement  = document.getElementById("noticeText");
+    const callSound          = document.getElementById("callSound");
+
+    let lastNumber = null;
+
+    function genderArabic(g) {
+        if (g === "men")   return "رجال";
+        if (g === "women") return "نساء";
+        return "---";
+    }
+
+    function renderTickets(container, list) {
+        container.innerHTML = "";
+        (list || []).slice(0, 30).forEach(num => {
+            const box = document.createElement("div");
+            box.className = "ticket-box";
+            box.textContent = num;
+            container.appendChild(box);
+        });
+    }
+
+    function updateDisplay(state) {
+        const num    = state.currentNumber || 0;
+        const gender = state.currentGender || "";
+
+        // تحديث الرقم الحالي والنوع
+        if (!num) {
+            currentNumberEl.textContent = "--";
+            currentGenderEl.textContent = "---";
+        } else {
+            currentNumberEl.textContent = num;
+            currentGenderEl.textContent = genderArabic(gender);
+        }
+
+        // تشغيل النغمة فقط عند تغيير الرقم
+        if (num && num !== lastNumber) {
+            lastNumber = num;
+            try {
+                callSound.currentTime = 0;
+                callSound.play();
+            } catch (e) {
+                console.warn("لم يتم تشغيل الصوت تلقائيًا:", e);
+            }
+        }
+
+        // تحديث الأعمدة (آخر الأرقام المناداة)
+        renderTickets(maleContainer,   state.historyMen   || []);
+        renderTickets(femaleContainer, state.historyWomen || []);
+
+        // تحديث الملاحظة المتحركة
+        const note = (state.noteText || "").trim();
+        if (note) {
+            noticeTextElement.textContent = note;
+        } else {
+            noticeTextElement.textContent =
+                "يرجى الالتزام بالهدوء وانتظار دورك، مع تمنياتنا لكم بالتوفيق والنجاح.";
+        }
+    }
+
+    function fetchState() {
+        fetch("/api/state")
+            .then(res  => res.json())
+            .then(data => updateDisplay(data))
+            .catch(err => console.error("خطأ في جلب الحالة:", err));
+    }
+
+    // تشغيل مبدئي ثم تحديث كل ٣ ثوانٍ
+    fetchState();
+    setInterval(fetchState, 3000);
+</script>
+
+</body>
+</html>

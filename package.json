@@ -1,0 +1,12 @@
+{
+  "name": "traffic-queue-student-gender-v2",
+  "version": "1.0.0",
+  "description": "Queue system with student number, gender, staff login, manager notes, stats, and separated men/women columns on display.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
