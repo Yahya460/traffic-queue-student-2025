@@ -1,511 +1,302 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>لوحة المدير - نظام الدور</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: #f3f4f6;
-      padding: 18px;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 4px;
-    }
-    .subtitle {
-      text-align: center;
-      color: #6b7280;
-      margin-bottom: 18px;
-      font-size: 14px;
-    }
-    .card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 14px 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
-      margin-bottom: 16px;
-    }
-    .card h3 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      font-size: 17px;
-    }
-    label {
-      display: block;
-      margin-top: 8px;
-      font-size: 14px;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
-      font-family: inherit;
-    }
-    textarea {
-      min-height: 70px;
-      resize: vertical;
-    }
-    button {
-      border: none;
-      cursor: pointer;
-      border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-    .btn-primary { background: #2563eb; color: #ffffff; }
-    .btn-danger { background: #ef4444; color: #ffffff; }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 14px;
-    }
-    th, td {
-      border-bottom: 1px solid #e5e7eb;
-      padding: 6px 4px;
-      text-align: center;
-    }
-    .footer {
-      margin-top: 20px;
-      text-align: center;
-      font-size: 13px;
-      color: #6b7280;
-    }
-    .flex-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .flex-row > * {
-      flex: 1 1 140px;
-    }
-    ul {
-      padding-right: 18px;
-      margin-top: 6px;
-      font-size: 14px;
-    }
-    .manager-note-preview {
-      margin-top: 6px;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px dashed #bfdbfe;
-      background: #eff6ff;
-      color: #1d4ed8;
-      font-size: 13px;
-      min-height: 40px;
-      white-space: pre-line;
-    }
-    .last-note-box {
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px dashed #fed7aa;
-      background: #fff7ed;
-      color: #7c2d12;
-      font-size: 13px;
-      min-height: 40px;
-      white-space: pre-line;
-    }
+    body{font-family:system-ui; background:#f3f4f6; margin:0; padding:16px}
+    .card{background:#fff;border-radius:14px;padding:14px;margin:10px 0;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    h1{margin:0 0 6px}
+    small{color:#6b7280}
+    input,select,button,textarea{font-family:inherit; font-size:15px}
+    input,select,textarea{width:100%; padding:10px;border:1px solid #e5e7eb;border-radius:10px;box-sizing:border-box}
+    button{padding:10px 12px;border:0;border-radius:10px;background:#111827;color:#fff;cursor:pointer}
+    button.danger{background:#b91c1c}
+    button.gray{background:#374151}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid #eee;padding:8px;text-align:center}
+    .row{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+    .muted{color:#6b7280}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px}
   </style>
 </head>
 <body>
   <h1>لوحة المدير - نظام الدور</h1>
-  <div class="subtitle">
-    إدارة المستخدمين · تغيير كلمات المرور · إرسال ملاحظات للموظفين · عرض إحصائيات نداء الأرقام · التحكم في تصفير الدور · معرفة الموظف ومحتوى آخر ملاحظة عامة
-  </div>
+  <small class="muted">إدارة المستخدمين · ملاحظات الموظفين · الإحصائيات · تصفير الدور · متابعة آخر ملاحظة عامة (تحديث تلقائي)</small>
 
-  <!-- دخول المدير -->
-  <div class="card">
+  <div class="card" id="loginCard">
     <h3>دخول المدير</h3>
-    <label>كلمة سر المدير (Admin Secret)</label>
-    <input type="password" id="adminSecret" placeholder="مثال: asm-admin-2025" />
-    <button class="btn-primary" onclick="unlockAdmin()">دخول</button>
-    <p id="adminStatus" style="color:#ef4444; font-size: 13px;"></p>
+    <div class="row">
+      <input id="adminSecret" placeholder="كلمة سر المدير (Admin Secret)" />
+      <button onclick="saveSecret()">دخول</button>
+    </div>
+    <p class="muted">ملاحظة: سيتم حفظ كلمة السر في المتصفح لهذا الجهاز فقط.</p>
   </div>
 
-  <!-- إدارة المستخدمين -->
-  <div class="card" id="usersCard" style="display:none;">
-    <h3>إدارة المستخدمين</h3>
-    <div class="flex-row">
+  <div class="card" id="dashboard" style="display:none">
+    <div class="row">
       <div>
-        <label>اسم المستخدم الجديد</label>
-        <input id="newUsername" />
+        <h3>حالة التحديث</h3>
+        <div class="pill" id="liveStatus">غير متصل</div>
+        <p class="muted">آخر تحديث: <span id="lastUpdate">-</span></p>
       </div>
-      <div>
-        <label>كلمة المرور</label>
-        <input id="newPassword" />
-      </div>
-      <div>
-        <label>الدور</label>
-        <select id="newRole">
-          <option value="staff">موظف</option>
-          <option value="admin">مدير</option>
-        </select>
+      <div style="text-align:left">
+        <button class="gray" onclick="manualRefresh()">تحديث الآن</button>
       </div>
     </div>
-    <button class="btn-primary" onclick="addUser()">إضافة مستخدم</button>
+  </div>
+
+  <div class="card" id="usersCard" style="display:none">
+    <h3>إدارة المستخدمين</h3>
+    <div class="row">
+      <input id="newUser" placeholder="اسم المستخدم الجديد" />
+      <input id="newPass" placeholder="كلمة المرور" />
+    </div>
+    <div class="row">
+      <select id="newRole">
+        <option value="staff">موظف</option>
+        <option value="admin">مدير</option>
+      </select>
+      <button onclick="addUser()">إضافة مستخدم</button>
+    </div>
 
     <h4>قائمة المستخدمين</h4>
     <table>
       <thead>
-        <tr>
-          <th>اسم المستخدم</th>
-          <th>الدور</th>
-          <th>تغيير كلمة المرور</th>
-          <th>حذف</th>
-        </tr>
+        <tr><th>اسم المستخدم</th><th>الدور</th><th>تغيير كلمة المرور</th><th>حذف</th></tr>
       </thead>
-      <tbody id="usersTableBody"></tbody>
+      <tbody id="usersTbody"></tbody>
     </table>
   </div>
 
-  <!-- إرسال ملاحظة لموظف معيّن -->
-  <div class="card" id="notesCard" style="display:none;">
+  <div class="card" id="staffNoteCard" style="display:none">
     <h3>ملاحظات للموظفين (لا تظهر على شاشة العرض)</h3>
-    <label>اختر الموظف</label>
-    <select id="noteStaffSelect">
-      <option value="">اختر الموظف...</option>
-    </select>
-
-    <label>الملاحظة</label>
-    <textarea id="noteForStaff" placeholder="اكتب ملاحظة للموظف المختار (ستظهر في لوحة الموظف)"></textarea>
-
-    <button class="btn-primary" onclick="sendStaffNote()">إرسال/تحديث الملاحظة</button>
-    <button class="btn-secondary" onclick="loadCurrentStaffNote()">عرض الملاحظة الحالية</button>
-
-    <div class="manager-note-preview" id="staffNotePreview">
-      اختر موظفًا لعرض أو إرسال الملاحظة.
+    <div class="row">
+      <select id="staffSelect"></select>
+      <button onclick="loadStaffNote()">عرض الملاحظة الحالية</button>
     </div>
+    <textarea id="staffNoteText" rows="3" placeholder="اكتب ملاحظة خاصة للموظف..."></textarea>
+    <button onclick="saveStaffNote()">إرسال/تحديث الملاحظة</button>
+    <p class="muted" id="staffNoteHint">اختر موظفًا لعرض أو إرسال الملاحظة.</p>
   </div>
 
-  <!-- الإحصائيات + آخر ملاحظة عامة -->
-  <div class="card" id="statsCard" style="display:none;">
+  <div class="card" id="statsCard" style="display:none">
     <h3>الإحصائيات</h3>
-    <p><strong>إجمالي الأرقام التي تم نداؤها:</strong> <span id="totalCalls">0</span></p>
+    <p>إجمالي الأرقام التي تم نداؤها (اليوم): <b id="totalCalls">0</b></p>
 
     <h4>حسب الموظف</h4>
-    <ul id="perStaffList"></ul>
+    <div id="perStaff"></div>
 
-    <h4>حسب اليوم</h4>
-    <ul id="perDayList"></ul>
+    <h4>حسب اليوم (سجل)</h4>
+    <div id="perDay"></div>
 
-    <p style="margin-top:10px; font-size:14px;">
-      <strong>الموظف صاحب آخر ملاحظة عامة على شاشة العرض:</strong>
-      <span id="lastNoteStaff">-</span>
-    </p>
-
+    <hr />
+    <p>الموظف صاحب آخر ملاحظة عامة على شاشة العرض: <b id="lastNoteStaff">-</b></p>
     <h4>محتوى آخر ملاحظة عامة على شاشة العرض</h4>
-    <div class="last-note-box" id="lastNoteText">
-      لا توجد ملاحظة عامة حاليًا.
-    </div>
-
-    <button class="btn-secondary" onclick="loadStats()">تحديث الإحصائيات</button>
+    <div class="card" style="background:#f9fafb" id="lastNoteTextBox">لا توجد ملاحظة عامة حاليًا.</div>
   </div>
 
-  <!-- التحكم في تصفير الدور + الإحصائيات -->
-  <div class="card" id="resetCard" style="display:none;">
+  <div class="card" id="controlsCard" style="display:none">
     <h3>إدارة الدور</h3>
-    <p>يمكنك تصفير الأرقام وإعادة النظام للبداية (0) أو تصفير الإحصائيات فقط.</p>
-    <button class="btn-danger" onclick="resetQueue()">تصفير الدور بالكامل</button>
-    <button class="btn-secondary" onclick="resetStats()">تصفير الإحصائيات فقط</button>
+    <p class="muted">يمكنك تصفير الأرقام وإعادة النظام للبداية (0) أو تصفير الإحصائيات فقط.</p>
+    <div class="row">
+      <button class="danger" onclick="resetQueue()">تصفير الدور بالكامل</button>
+      <button class="danger" onclick="resetStats()">تصفير الإحصائيات فقط</button>
+    </div>
   </div>
 
-  <div class="footer">
+  <p class="muted" style="text-align:center;margin-top:18px">
     جميع الحقوق محفوظة للرقيب أول يحيى آل عبدالسلام
-  </div>
+  </p>
 
-  <script>
-    let adminSecretValue = '';
-    let usersCache = [];
+<script>
+  let timer = null;
 
-    function unlockAdmin() {
-      adminSecretValue = document.getElementById('adminSecret').value.trim();
-      if (!adminSecretValue) {
-        document.getElementById('adminStatus').textContent = 'أدخل كلمة سر المدير أولاً.';
-        return;
-      }
-      loadUsers(true);
+  function getSecret() {
+    return localStorage.getItem('adminSecret') || '';
+  }
+
+  function saveSecret() {
+    const s = document.getElementById('adminSecret').value.trim();
+    if (!s) return alert('أدخل كلمة سر المدير');
+    localStorage.setItem('adminSecret', s);
+    init();
+  }
+
+  function init() {
+    const s = getSecret();
+    if (!s) return;
+
+    document.getElementById('loginCard').style.display = 'none';
+    ['dashboard','usersCard','staffNoteCard','statsCard','controlsCard'].forEach(id=>{
+      document.getElementById(id).style.display='block';
+    });
+
+    manualRefresh();
+
+    if (timer) clearInterval(timer);
+    timer = setInterval(manualRefresh, 2000); // ✅ تحديث تلقائي
+  }
+
+  async function api(path, opts={}) {
+    const adminSecret = getSecret();
+    const url = path.includes('?') ? `${path}&adminSecret=${encodeURIComponent(adminSecret)}`
+                                  : `${path}?adminSecret=${encodeURIComponent(adminSecret)}`;
+    const res = await fetch(url, opts);
+    const data = await res.json().catch(()=> ({}));
+    if (!res.ok) throw new Error(data.message || 'حدث خطأ');
+    return data;
+  }
+
+  function setLive(ok) {
+    const el = document.getElementById('liveStatus');
+    el.textContent = ok ? 'متصل (تحديث تلقائي)' : 'غير متصل';
+    el.style.background = ok ? '#dcfce7' : '#fee2e2';
+    el.style.color = ok ? '#166534' : '#991b1b';
+  }
+
+  function nowStr() {
+    return new Date().toLocaleString('ar-OM');
+  }
+
+  async function manualRefresh() {
+    try {
+      // users
+      const users = await api('/api/users');
+      renderUsers(users);
+      fillStaffSelect(users);
+
+      // stats
+      const stats = await api('/api/stats');
+      renderStats(stats);
+
+      // state (ملاحظة عامة + صاحبها)
+      const state = await fetch('/api/state').then(r=>r.json());
+      document.getElementById('lastNoteStaff').textContent = state.lastNoteStaff || '-';
+      document.getElementById('lastNoteTextBox').textContent = state.noteText ? state.noteText : 'لا توجد ملاحظة عامة حاليًا.';
+
+      document.getElementById('lastUpdate').textContent = nowStr();
+      setLive(true);
+    } catch (e) {
+      setLive(false);
     }
+  }
 
-    function loadUsers(fromUnlock = false) {
-      fetch('/api/users?adminSecret=' + encodeURIComponent(adminSecretValue))
-        .then(res => {
-          if (!res.ok) throw new Error('غير مصرح');
-          return res.json();
-        })
-        .then(users => {
-          usersCache = users;
-          document.getElementById('usersCard').style.display = 'block';
-          document.getElementById('statsCard').style.display = 'block';
-          document.getElementById('resetCard').style.display = 'block';
-          document.getElementById('notesCard').style.display = 'block';
-          document.getElementById('adminStatus').textContent = fromUnlock ? 'تم الدخول كمدير.' : '';
-          renderUsers(users);
-          renderStaffSelect(users);
-          loadStats();
-          loadNoteInfo();
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('adminStatus').textContent = 'كلمة السر غير صحيحة أو غير مصرح.';
-        });
-    }
+  function renderUsers(users) {
+    const tb = document.getElementById('usersTbody');
+    tb.innerHTML = '';
+    users.forEach(u=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${u.username}</td>
+        <td>${u.role}</td>
+        <td>
+          <input placeholder="كلمة جديدة" id="pw_${u.username}" />
+          <button class="gray" onclick="changePw('${u.username}')">حفظ</button>
+        </td>
+        <td><button class="danger" onclick="delUser('${u.username}')">حذف</button></td>
+      `;
+      tb.appendChild(tr);
+    });
+  }
 
-    function renderUsers(users) {
-      const tbody = document.getElementById('usersTableBody');
-      tbody.innerHTML = '';
-      users.forEach(user => {
-        const tr = document.createElement('tr');
+  function fillStaffSelect(users){
+    const sel = document.getElementById('staffSelect');
+    const staff = users.filter(u=>u.role==='staff');
+    const prev = sel.value;
+    sel.innerHTML = `<option value="">اختر الموظف...</option>` + staff.map(s=>`<option value="${s.username}">${s.username}</option>`).join('');
+    if (prev) sel.value = prev;
+  }
 
-        const tdUser = document.createElement('td');
-        tdUser.textContent = user.username;
+  async function addUser(){
+    const username = document.getElementById('newUser').value.trim();
+    const password = document.getElementById('newPass').value.trim();
+    const role = document.getElementById('newRole').value;
+    if(!username || !password) return alert('أدخل اسم المستخدم وكلمة المرور');
+    await api('/api/users', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username, password, role, adminSecret: getSecret() })
+    });
+    document.getElementById('newUser').value='';
+    document.getElementById('newPass').value='';
+    manualRefresh();
+  }
 
-        const tdRole = document.createElement('td');
-        tdRole.textContent = user.role === 'admin' ? 'مدير' : 'موظف';
+  async function changePw(username){
+    const newPassword = document.getElementById(`pw_${username}`).value.trim();
+    if(!newPassword) return alert('أدخل كلمة جديدة');
+    await api(`/api/users/${encodeURIComponent(username)}/password`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ newPassword, adminSecret: getSecret() })
+    });
+    manualRefresh();
+  }
 
-        const tdChangePass = document.createElement('td');
-        const inputNewPass = document.createElement('input');
-        inputNewPass.type = 'text';
-        inputNewPass.placeholder = 'كلمة مرور جديدة';
-        inputNewPass.style.width = '120px';
-        const btnChange = document.createElement('button');
-        btnChange.textContent = 'تحديث';
-        btnChange.className = 'btn-primary';
-        btnChange.style.marginRight = '4px';
-        btnChange.onclick = () => changePassword(user.username, inputNewPass.value);
-        tdChangePass.appendChild(inputNewPass);
-        tdChangePass.appendChild(btnChange);
+  async function delUser(username){
+    await api(`/api/users/${encodeURIComponent(username)}`, { method:'DELETE' });
+    manualRefresh();
+  }
 
-        const tdDelete = document.createElement('td');
-        const btnDelete = document.createElement('button');
-        btnDelete.textContent = 'حذف';
-        btnDelete.className = 'btn-danger';
-        btnDelete.onclick = () => deleteUser(user.username);
-        tdDelete.appendChild(btnDelete);
+  async function saveStaffNote(){
+    const staffName = document.getElementById('staffSelect').value;
+    const note = document.getElementById('staffNoteText').value;
+    if(!staffName) return alert('اختر موظف');
+    await api('/api/staff-note', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ staffName, note, adminSecret: getSecret() })
+    });
+    document.getElementById('staffNoteHint').textContent = 'تم إرسال/تحديث الملاحظة.';
+  }
 
-        tr.appendChild(tdUser);
-        tr.appendChild(tdRole);
-        tr.appendChild(tdChangePass);
-        tr.appendChild(tdDelete);
+  async function loadStaffNote(){
+    const staffName = document.getElementById('staffSelect').value;
+    if(!staffName) return alert('اختر موظف');
+    const r = await fetch(`/api/staff-note?staffName=${encodeURIComponent(staffName)}`);
+    const data = await r.json();
+    document.getElementById('staffNoteText').value = data.note || '';
+    document.getElementById('staffNoteHint').textContent = 'تم عرض الملاحظة الحالية.';
+  }
 
-        tbody.appendChild(tr);
-      });
-    }
+  function renderStats(stats){
+    document.getElementById('totalCalls').textContent = stats.totalCalls || 0;
 
-    function renderStaffSelect(users) {
-      const select = document.getElementById('noteStaffSelect');
-      const currentValue = select.value;
-      select.innerHTML = '<option value="">اختر الموظف...</option>';
-      users
-        .filter(u => u.role === 'staff')
-        .forEach(u => {
-          const opt = document.createElement('option');
-          opt.value = u.username;
-          opt.textContent = u.username;
-          select.appendChild(opt);
-        });
-      if (currentValue) {
-        select.value = currentValue;
-      }
-    }
+    const ps = stats.perStaff || {};
+    document.getElementById('perStaff').innerHTML =
+      Object.keys(ps).length
+        ? `<ul>${Object.entries(ps).map(([k,v])=>`<li><b>${k}</b>: ${v}</li>`).join('')}</ul>`
+        : `<div class="muted">لا توجد بيانات بعد.</div>`;
 
-    function addUser() {
-      const username = document.getElementById('newUsername').value.trim();
-      const password = document.getElementById('newPassword').value.trim();
-      const role = document.getElementById('newRole').value;
+    const pd = stats.perDay || {};
+    const days = Object.keys(pd).sort().reverse();
+    document.getElementById('perDay').innerHTML =
+      days.length
+        ? `<ul>${days.map(d=>`<li><b>${d}</b>: ${pd[d]}</li>`).join('')}</ul>`
+        : `<div class="muted">لا توجد بيانات بعد.</div>`;
+  }
 
-      if (!username || !password) {
-        alert('أدخل اسم المستخدم وكلمة المرور.');
-        return;
-      }
+  async function resetQueue(){
+    await api('/api/reset', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ adminSecret: getSecret() })
+    });
+    manualRefresh();
+  }
 
-      fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSecret: adminSecretValue, username, password, role })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || 'تم الحفظ');
-        document.getElementById('newUsername').value = '';
-        document.getElementById('newPassword').value = '';
-        loadUsers();
-      })
-      .catch(err => console.error(err));
-    }
+  async function resetStats(){
+    await api('/api/reset-stats', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ adminSecret: getSecret() })
+    });
+    manualRefresh();
+  }
 
-    function changePassword(username, newPassword) {
-      if (!newPassword) {
-        alert('أدخل كلمة مرور جديدة.');
-        return;
-      }
-      fetch('/api/users/' + encodeURIComponent(username) + '/password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSecret: adminSecretValue, newPassword })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || 'تم التحديث');
-      })
-      .catch(err => console.error(err));
-    }
-
-    function deleteUser(username) {
-      if (!confirm('هل أنت متأكد من حذف المستخدم "' + username + '"؟')) return;
-
-      fetch('/api/users/' + encodeURIComponent(username) + '?adminSecret=' + encodeURIComponent(adminSecretValue), {
-        method: 'DELETE'
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || 'تم الحذف');
-        loadUsers();
-      })
-      .catch(err => console.error(err));
-    }
-
-    function loadStats() {
-      fetch('/api/stats?adminSecret=' + encodeURIComponent(adminSecretValue))
-        .then(res => {
-          if (!res.ok) throw new Error('غير مصرح');
-          return res.json();
-        })
-        .then(stats => {
-          document.getElementById('totalCalls').textContent = stats.totalCalls || 0;
-
-          const perStaffList = document.getElementById('perStaffList');
-          perStaffList.innerHTML = '';
-          Object.keys(stats.perStaff || {}).forEach(name => {
-            const li = document.createElement('li');
-            li.textContent = name + ' : ' + stats.perStaff[name] + ' رقم/أرقام';
-            perStaffList.appendChild(li);
-          });
-
-          const perDayList = document.getElementById('perDayList');
-          perDayList.innerHTML = '';
-          Object.keys(stats.perDay || {}).forEach(day => {
-            const li = document.createElement('li');
-            li.textContent = day + ' : ' + stats.perDay[day] + ' رقم/أرقام';
-            perDayList.appendChild(li);
-          });
-        })
-        .catch(err => console.error(err));
-
-      // نجلب بيانات آخر ملاحظة عامة مع كل تحديث إحصائيات
-      loadNoteInfo();
-    }
-
-    function resetQueue() {
-      if (!confirm('هل أنت متأكد من تصفير الدور بالكامل؟')) return;
-
-      fetch('/api/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSecret: adminSecretValue })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || 'تم التصفير');
-      })
-      .catch(err => console.error(err));
-    }
-
-    // زر جديد: تصفير الإحصائيات فقط
-    function resetStats() {
-      if (!confirm('هل أنت متأكد من تصفير جميع الإحصائيات؟')) return;
-
-      fetch('/api/reset-stats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSecret: adminSecretValue })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || 'تم تصفير الإحصائيات');
-        loadStats();
-      })
-      .catch(err => console.error(err));
-    }
-
-    // ===== ملاحظات للموظفين =====
-    function getSelectedStaffForNote() {
-      const select = document.getElementById('noteStaffSelect');
-      return select.value || '';
-    }
-
-    function sendStaffNote() {
-      const staffName = getSelectedStaffForNote();
-      const note = document.getElementById('noteForStaff').value;
-      const preview = document.getElementById('staffNotePreview');
-
-      if (!staffName) {
-        alert('اختر الموظف أولاً.');
-        return;
-      }
-
-      fetch('/api/staff-note', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminSecret: adminSecretValue, staffName, note })
-      })
-      .then(res => res.json())
-      .then(data => {
-        preview.textContent = data.note ? data.note : 'لا توجد ملاحظة حالية لهذا الموظف.';
-        alert('تم حفظ الملاحظة للموظف: ' + staffName);
-      })
-      .catch(err => console.error(err));
-    }
-
-    function loadCurrentStaffNote() {
-      const staffName = getSelectedStaffForNote();
-      const preview = document.getElementById('staffNotePreview');
-
-      if (!staffName) {
-        alert('اختر الموظف أولاً.');
-        return;
-      }
-
-      fetch('/api/staff-note?staffName=' + encodeURIComponent(staffName))
-        .then(res => res.json())
-        .then(data => {
-          const note = (data.note || '').trim();
-          if (!note) {
-            preview.textContent = 'لا توجد ملاحظة حالية لهذا الموظف.';
-          } else {
-            preview.textContent = note;
-          }
-        })
-        .catch(err => console.error(err));
-    }
-
-    // ===== معرفة الموظف ومحتوى آخر ملاحظة عامة =====
-    function loadNoteInfo() {
-      fetch('/api/state')
-        .then(res => res.json())
-        .then(state => {
-          const staffSpan = document.getElementById('lastNoteStaff');
-          const textBox = document.getElementById('lastNoteText');
-          const name = (state.lastNoteStaff || '').trim();
-          const note = (state.noteText || '').trim();
-
-          staffSpan.textContent = name || '-';
-          textBox.textContent = note || 'لا توجد ملاحظة عامة حاليًا.';
-        })
-        .catch(err => console.error(err));
-    }
-
-    // تحديث تلقائي لاسم الموظف + محتوى آخر ملاحظة عامة كل 5 ثواني
-    setInterval(loadNoteInfo, 5000);
-  </script>
+  init();
+</script>
 </body>
 </html>
